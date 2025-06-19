@@ -18,8 +18,5 @@ app.use(cookieParser())
 app.use(express.json());
 
 app.use('/api/v1/users', userRouter)
-app.get('/',(req,res)=>{
-res.status(200).json({message:"okkkkkkkkk"})
-})
 
 export default app;
