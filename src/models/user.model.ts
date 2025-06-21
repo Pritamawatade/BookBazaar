@@ -1,10 +1,10 @@
 import mongoose, { Schema, Document } from "mongoose";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config({
-  path: './env'
+  path: "./env",
 });
 export interface IUser extends Document {
   username: string;
@@ -17,6 +17,14 @@ export interface IUser extends Document {
   emailVerificationTokenExpiresIn: Date;
   isEmailVerified: boolean;
   role: string;
+  comparePassword(password: string): Promise<boolean>;
+  generateAccessToken(): string;
+  generateRefreshToken(): string;
+  generateTempTokens(): {
+    unhashedToken: string;
+    hashedToken: string;
+    expiresIn: Date;
+  };
 }
 
 const userSchema = new Schema<IUser>(
@@ -49,6 +57,10 @@ const userSchema = new Schema<IUser>(
     emailVerificationTokenExpiresIn: {
       type: Date,
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
     role: {
       type: String,
       enum: ["admin", "user"],
@@ -75,25 +87,37 @@ userSchema.methods.comparePassword = async function (
 };
 
 userSchema.methods.generateAccessToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET as string, {
-    expiresIn: "1d",
-  });
+  return jwt.sign({ id: this._id }, process.env.ACCESS_TOKEN_SECRET as string, {
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "1d",
+  } as SignOptions
+  );
 };
 
 userSchema.methods.generateRefreshToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_REFRESH_SECRET as string, {
-    expiresIn: "7d",
-  });
+  return jwt.sign(
+    {
+      id: this._id,
+      email: this.email,
+      username: this.username,
+    },
+    process.env.REFRESH_TOKEN_SECRET as string,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d",
+    } as SignOptions
+  );
 };
 
 userSchema.methods.generateTempTokens = function () {
   const unhashedToken = crypto.randomBytes(32).toString("hex");
-  const hashedToken = crypto.createHash("sha256").update(unhashedToken).digest("hex");
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(unhashedToken)
+    .digest("hex");
   const expiresIn = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
   return {
     unhashedToken,
     hashedToken,
     expiresIn,
-  }
-}
+  };
+};
 export const User = mongoose.model("User", userSchema);
