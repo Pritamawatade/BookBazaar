@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { User } from "../models/user.model";
 import { ApiResponse } from "../utils/api-response";
 import { ApiError } from "../utils/api-error";
@@ -66,7 +66,7 @@ const register = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-const login = async (req: Request, res: Response): Promise<void> => {
+const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -78,7 +78,8 @@ const login = async (req: Request, res: Response): Promise<void> => {
     }
     const isPasswordCorrect = await user.comparePassword(password);
     if (!isPasswordCorrect) {
-      throw new ApiError(401, "Invalid password", []);
+      console.log("Incorrect password")
+      throw new ApiError(401, "Incorrect password", []);
     }
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id as string);
     user.refreshToken = refreshToken;
@@ -124,4 +125,51 @@ const logout = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export { register, login, logout };
+const changePassword = async (req: Request, res: Response): Promise<void> => {
+  if (!req.user) {
+    throw new ApiError(401, "Unauthorized", []);
+  }
+  const { _id} = req.user;
+  const { oldPassword, newPassword } = req.body;
+  try {
+    if (!oldPassword || !newPassword) {
+      throw new ApiError(400, "All fields are required", []);
+    }
+    const user = await User.findById(_id);
+    if (!user) {
+      throw new ApiError(404, "User not found", []);
+    }
+    const isPasswordCorrect = await user.comparePassword(oldPassword);
+    if (!isPasswordCorrect) {
+      console.log("Invalid password")
+      throw new ApiError(401, "Invalid password", []);
+    } 
+    user.password = newPassword;
+    await user.save();
+    res.status(200).json(new ApiResponse(200, "password changed successfully", user));
+    return;
+  } catch (error) {
+    console.log("error in changePassword ", error);
+    throw new ApiError(400, "error in changePassword", error);
+  }
+};
+
+const getUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      throw new ApiError(401, "Unauthorized", []);
+    }
+    const { _id } = req.user;
+    const user = await User.findById(_id);
+    if (!user) {
+      throw new ApiError(404, "User not found", []);
+    }
+    res.status(200).json(new ApiResponse(200, "user fetched successfully", user));
+  } catch (error) {
+    console.log("error in getUser ", error);
+    throw new ApiError(400, "error in getUser", error);
+  }
+};
+
+
+export { register, login, logout, changePassword, getUser };
