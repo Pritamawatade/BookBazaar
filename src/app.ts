@@ -4,6 +4,7 @@ import cors from "cors";
 import userRouter from "./routes/user.routes";
 import cookieParser from "cookie-parser";
 import booksRouter from "./routes/books.routes";
+import orderRouter from "./routes/order.routes";
 
 const app = express();
 dotenv.config({
@@ -21,5 +22,6 @@ app.use(express.json());
 
 app.use('/api/v1/auth', userRouter)
 app.use('/api/v1/books', booksRouter)
+app.use('/api/v1/orders', orderRouter)
 
 export default app;

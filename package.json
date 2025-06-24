@@ -2,8 +2,8 @@
   "name": "bookbazaar",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "scripts": {
+  "main": "index.ts",
+   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc -p .",
     "start": "node dist/index.js",

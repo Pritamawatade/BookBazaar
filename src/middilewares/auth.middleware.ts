@@ -4,7 +4,8 @@ import jwt from "jsonwebtoken";
 const authMiddleware = async (req: any, res: any, next: any) => {
   try {
     const { accessToken } = req.cookies || req.headers;
-
+    console.log("req.headers", req.headers)
+    console.log("accessToken", accessToken)
     if (!accessToken) {
       throw new ApiError(401, "Unauthorized", []);
     }
@@ -13,13 +14,14 @@ const authMiddleware = async (req: any, res: any, next: any) => {
       accessToken,
       process.env.ACCESS_TOKEN_SECRET as string
     ) as any;
-
+    console.log("decoded", decoded)
     if (!decoded) {
       throw new ApiError(401, "Unauthorized", []);
     }
 
     const user = await User.findById(decoded.id);
 
+    console.log("user====>", user)
     if (!user) {
       throw new ApiError(401, "Unauthorized", []);
     }

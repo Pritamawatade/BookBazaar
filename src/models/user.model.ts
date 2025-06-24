@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import jwt, { SignOptions } from "jsonwebtoken";
 import dotenv from "dotenv";
+import { IApiKey } from "./apikey.model";
 dotenv.config({
   path: "./env",
 });
@@ -25,6 +26,7 @@ export interface IUser extends Document {
     hashedToken: string;
     expiresIn: Date;
   };
+  apiKeys: string[];
 }
 
 const userSchema = new Schema<IUser>(
@@ -66,6 +68,13 @@ const userSchema = new Schema<IUser>(
       enum: ["admin", "user"],
       default: "user",
     },
+    apiKeys: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ApiKey",
+      }
+    ],
+
   },
   {
     timestamps: true,
